@@ -9,6 +9,8 @@ clinical_significance = {
     'Conflicting interpretations of pathogenicity. risk factor': ', имеет конфликтующие интерпретации патогенности',
     'Conflicting interpretations of pathogenicity|risk factor': ', имеет конфликтующие интерпретации патогенности',
     'Conflicting interpretations of pathogenicity': ', имеет конфликтующие интерпретации патогенности',
+    'Conflicting classifications of pathogenicity': ', имеет конфликтующие интерпретации патогенности',
+    'Conflicting classifications of pathogenicity|risk factor': ', имеет конфликтующие интерпретации патогенности',
     'not provided': ', критерии не предоставлены'
 }
 
