@@ -83,32 +83,38 @@ def draw_cover_plot(folder: str):
         plt.close()
 
 
-def parse_varscan_output(input_file: str, output_file: str = None) -> None:
-    if output_file is None:
-        name = os.path.basename(input_file).split('.')[0]
-        output_file = name + '.tsv'
+def parse_varscan_output(folder: str):
+    # Ensure the "parsed" directory exists
+    os.makedirs(os.path.join(folder, "parsed"), exist_ok=True)
+    path_to_parsed = os.path.join(folder, "parsed")
 
-    current_line = []
-    new_line = ["CHROM\tPOS\tNote\tREF\tALT\tGT\tGQ\tSDP\tDP\tRD\tAD\tFREQ\tPVAL\tRBQ\tABQ\tRDF\tRDR\tADF\tADR"]
+    for input_file in os.listdir(folder):
+        if input_file.endswith(".vcf"):
+            name = input_file.replace(".vcf", "")  # Extract the file name without extension
 
-    with open(input_file, mode='r') as file:
-        for line in file:
-            line = line.strip()
-            if line.startswith('#'):
-                continue
-            else:
-                line = line.split('\t')
-                info = line[-1].split(':')
-                current_line.extend(line[0:5])
-                current_line.extend(info)
-                new_line.append('\t'.join(current_line))
-                current_line = []
+            # Initialize a list for the header and new data lines
+            new_line = ["Chrom\tPosition\tNote\tREF\tALT\tGT\tGQ\tSDP\tDP\tRD\tAD\tFREQ\tPVAL\tRBQ\tABQ\tRDF\tRDR\tADF\tADR"]
 
-    with open(output_file, mode='w') as outfile:
-        outfile.write('\n'.join(new_line))
+            with open(os.path.join(folder, input_file), mode='r') as file:
+                for line in file:
+                    line = line.strip()
+
+                    if line.startswith('#'):
+                        continue  # Skip header lines
+
+                    # Process each data line
+                    line = line.split('\t')
+                    info = line[-1].split(':')  # Split the INFO column
+                    current_line = line[0:5]  # Extract the first 5 fields
+                    current_line.extend(info)  # Append additional information fields
+                    new_line.append('\t'.join(current_line))  # Add the processed line to the result list
+
+            # Write the processed data to a new file
+            with open(os.path.join(path_to_parsed, f'{name}.txt'), mode='w') as outfile:
+                outfile.write('\n'.join(new_line))  # Join the lines with newline character
 
 
-def filter_cravat_xls(folder: str, total_reads: int = 50):
+def filter_cravat_xls(folder: str, total_reads: int = 50, vaf: float = 0.2):
     os.makedirs(os.path.join(folder, "filtered"), exist_ok=True)
     path_to_filtered = os.path.join(folder, "filtered")
     for file in os.listdir(folder):
@@ -125,9 +131,45 @@ def filter_cravat_xls(folder: str, total_reads: int = 50):
                                'African AF', 'Ashkenazi Jewish AF', 'East Asian AF', 'Finnish AF', 'Latino AF',
                                'Non-Fin Eur AF', 'Other AF', 'South Asian AF']
             df = df[columns_to_keep]
-            filtered_df = df.query(f"`Total reads` > {total_reads}")
-            sorted_df = filtered_df[filtered_df['Global AF'].isna() | (filtered_df['Global AF'] < 0.01)]
+            filtered_df = df.query(
+                "`Total reads` > @total_reads and `Variant AF` >= @vaf and (`Global AF`.isna() or `Global AF` < 0.01)"
+            )
 
             dest_file = open(os.path.join(path_to_filtered, f'{name}.xlsx'), 'wb')
-            sorted_df.to_excel(dest_file, index=False, engine='openpyxl')
+            filtered_df.to_excel(dest_file, index=False, engine='openpyxl')
             print("Атлищна! отфильтрованные данные в ", dest_file)
+
+
+def filter_varscan_xls(folder: str, total_reads: int = 50):
+    # Define paths
+    path_to_xlsx = os.path.join(folder, "annotated_varscan")
+    path_to_txt = os.path.join(folder, "varscan", "parsed")
+    path_to_filtered = os.path.join(path_to_xlsx, "filtered")
+
+    # Create the filtered directory if it doesn't exist
+    os.makedirs(path_to_filtered, exist_ok=True)
+
+    # Iterate through files in the annotated_varscan folder
+    for file in os.listdir(path_to_xlsx):
+        if file.endswith(".vcf.xlsx"):
+            name = file.split('.vcf')[0]
+
+            # Load the Excel file and CSV file
+            df_1 = pd.read_excel(os.path.join(path_to_xlsx, file), sheet_name="Variant", header=1)
+            df_2 = pd.read_csv(os.path.join(path_to_txt, f'{name}.txt'), sep='\t', header=0)
+            if 'indel' in name and 'Position' in df_2.columns:
+                df_2['Position'] = df_2['Position'] + 1
+
+            # Merge the dataframes
+            df = df_1.merge(df_2, how='left')  # Use 'how' to specify the type of merge
+            df['FREQ'] = df['FREQ'].str.rstrip('%').astype(float)
+            filtered_df = df.query(
+                "`FREQ` >= 1 and `Total reads` > @total_reads and (`Global AF`.isna() or `Global AF` < 0.01)"
+            )
+
+            # Define destination file path
+            dest_file_path = os.path.join(path_to_filtered, f'{name}.xlsx')
+
+            # Write the merged dataframe to Excel
+            filtered_df.to_excel(dest_file_path, index=False, engine='openpyxl')
+            print(f"Очень хорошо! Объединенные данные сохранены в {dest_file_path}")
