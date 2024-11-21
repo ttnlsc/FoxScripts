@@ -1,7 +1,16 @@
 import os
+import re
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+
+AA_NAME_DICT = {'Gly': 'G', 'Leu': 'L', 'Tyr': 'Y',
+                'Ser': 'S', 'Glu': 'E', 'Gln': 'Q',
+                'Asp': 'D', 'Asn': 'N', 'Phe': 'F',
+                'Ala': 'A', 'Lys': 'K', 'Arg': 'R',
+                'His': 'H', 'Cys': 'C', 'Val': 'V',
+                'Pro': 'P', 'Trp': 'W', 'Ile': 'I',
+                'Met': 'M', 'Thr': 'T'}
 
 
 def read_metrics_to_dataframe(filepath: str):
@@ -173,3 +182,18 @@ def filter_varscan_xls(folder: str, total_reads: int = 50):
             # Write the merged dataframe to Excel
             filtered_df.to_excel(dest_file_path, index=False, engine='openpyxl')
             print(f"Очень хорошо! Объединенные данные сохранены в {dest_file_path}")
+
+
+def convert_three_to_one(aa_string: str) -> str:
+    def replace_match(match):
+        aa_three_ref = match.group(1)
+        position = match.group(2)
+        aa_three_alt = match.group(3)
+
+        aa_one_ref = AA_NAME_DICT.get(aa_three_ref.capitalize(), aa_three_ref)
+        aa_one_alt = AA_NAME_DICT.get(aa_three_alt.capitalize(), aa_three_alt)
+
+        return f"{aa_one_ref}{position}{aa_one_alt}"
+
+    result = re.sub(r"([A-Za-z]{3})(\d+)([A-Za-z]{3})", replace_match, aa_string)
+    return result
