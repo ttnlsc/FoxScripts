@@ -17,7 +17,9 @@ clinical_significance = {
 acmg_significance = {
     '5': 'патогенным вариантом',
     '4': 'вероятно патогенным вариантом',
-    '3': 'вариантом с неизвестным клиническим значением'
+    '3': 'вариантом с неизвестным клиническим значением',
+    '2': 'вероятно доброкачественным вариантом',
+    '1': 'доброкачественным вариантом',
 }
 
 sequence_ontology = {
@@ -71,14 +73,16 @@ def read_data(filename):
         params['rs'] = header.index('rsID')
         params['zyg'] = header.index('Zygosity')
         params['cosmic'] = header.index('ID')
-        # params['panel'] = header.index('panel')
+        params['panel'] = header.index('panel')
 
         for line in splited_data[1:]:
             line = line.split(';')
-            if line[params['material']] == 'кровь':
+            if line[params['material']] == 'кровь' and line[params['panel']] == 'abc_v3':
                 write_abc_blood_conclusion(params, line)
-            elif line[params['material']] == 'блок':
+            elif line[params['material']] == 'блок' and line[params['panel']] == 'abc_v3':
                 write_abc_ffpe_conclusion(params, line)
+            elif line[params['material']] == 'блок' and line[params['panel']] == 'atlas':
+                write_atlas_ffpe_conclusion(params, line)
             else:
                 raise ValueError(f"Wrong material {line[params['material']]}")
 
@@ -140,10 +144,10 @@ def write_abc_blood_conclusion(params, line):
             mut_description = ' '.join(mut_description)
             conclusion.append(mut_description)
         if line[params['freq']] == '':
-            conclusion.append("Вариант отсутствует в базе данных популяционных частот gnomAD_genomes v3.")
+            conclusion.append("Вариант отсутствует в базе данных популяционных частот gnomAD_v4.1.0.")
         else:
             conclusion.append(
-                f"Частота минорного аллеля (gnomAD_genomes v3) {(float(line[params['freq']]) * 100): .4g}%.")
+                f"Частота минорного аллеля (gnomAD_v4.1.0) - {(float(line[params['freq']]) * 100): .4g}%.")
         conclusion.append(f"Глубина прочтения варианта {line[params['depth']]}x.")
         if line[params['clinvar']] != '' and line[params['rs']] != '':
             conclusion.append(
@@ -198,14 +202,14 @@ def write_abc_ffpe_conclusion(params, line):
                 mut_description.append(
                     f"(hg38 {line[params['chrom']]}:{line[params['pos']]}-{line[params['ref']]}-{line[params['alt']]}, {line[params['protein']]}, {line[params['rs']]}),")
                 mut_description.append(
-                    f"аллельный баланс {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
+                    f"аллельный баланс - {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
             else:
                 mut_description.append(
                     f"в {line[params['exon']]} экзоне гена {line[params['gene']]}({line[params['transcript']]}) выявлена мутация {line[params['coding']]}")
                 mut_description.append(
                     f"(hg38 {line[params['chrom']]}:{line[params['pos']]}-{line[params['ref']]}-{line[params['alt']]}, {line[params['protein']]}, {line[params['rs']]}),")
                 mut_description.append(
-                    f"аллельный баланс {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
+                    f"аллельный баланс - {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
             mut_description = ' '.join(mut_description)
             conclusion.append(mut_description)
         else:
@@ -218,21 +222,21 @@ def write_abc_ffpe_conclusion(params, line):
                 mut_description.append(
                     f"(hg38 {line[params['chrom']]}:{line[params['pos']]}-{line[params['ref']]}-{line[params['alt']]}, {line[params['protein']]}, {line[params['rs']]}),")
                 mut_description.append(
-                    f"аллельный баланс {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
+                    f"аллельный баланс - {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
             else:
                 mut_description.append(
                     f"в {line[params['exon']]} экзоне гена {line[params['gene']]}({line[params['transcript']]}) выявлена мутация {line[params['coding']]}")
                 mut_description.append(
                     f"(hg38 {line[params['chrom']]}:{line[params['pos']]}-{line[params['ref']]}-{line[params['alt']]}, {line[params['protein']]}, {line[params['rs']]}),")
                 mut_description.append(
-                    f"аллельный баланс {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
+                    f"аллельный баланс - {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
             mut_description = ' '.join(mut_description)
             conclusion.append(mut_description)
         if line[params['freq']] == '':
-            conclusion.append("Вариант отсутствует в базе данных популяционных частот gnomAD_genomes v3.")
+            conclusion.append("Вариант отсутствует в базе данных популяционных частот gnomAD_v4.1.0.")
         else:
             conclusion.append(
-                f"Частота минорного аллеля (gnomAD_genomes v3) {(float(line[params['freq']]) * 100): .4g}%.")
+                f"Частота минорного аллеля (gnomAD_v4.1.0.) - {(float(line[params['freq']]) * 100): .4g}%.")
         conclusion.append(f"Глубина прочтения варианта {line[params['depth']]}x.")
         if line[params['gene']] not in ["PIK3CA", "BRAF"]:
             if line[params['clinvar']] != '' and line[params['rs']] != '':
@@ -253,7 +257,7 @@ def write_abc_ffpe_conclusion(params, line):
                 conclusion.append(
                     "Согласно клиническим рекомендациям NCCN, изменение тактики ведения для пациентов носителей данного варианта не требуется.")
             else:
-                conclusion.append(f"Класс по AMP - {line[params['amp']]}")
+                conclusion.append(f"Класс по AMP - {line[params['amp']]}.")
                 conclusion.append(
                     "С целью установления характера мутации: герминальный или соматический, рекомендовано выполнить исследование на наличие данной мутации в образце крови.")
                 conclusion.append("Рекомендована консультация врача-генетика.")
@@ -265,5 +269,60 @@ def write_abc_ffpe_conclusion(params, line):
     else:
         raise ValueError(f"Wrong result {line[params['result']]}")
 
+    with open(output_file, mode='w') as outfile:
+        outfile.write('\n'.join(conclusion))
+
+def write_atlas_ffpe_conclusion(params, line):
+    name = line[params['number']].split('/')[0]
+    output_file = name + '.txt'
+
+    conclusion = [
+        'Выполнено исследование с использованием набора реагентов "Соло-тест Атлас" (РУ № РЗН 2021/13662)',
+        'методом высокопроизводительного секвенирования по ТУ 21.20.23-002-91709359-2018.',
+        'Регионы, входящие в панель: кодирующие области генов CYP2D6, DPYD, EGFR, FGFR1, FGFR2, FGFR3, FGFR4, PTEN, STK11, TP53,',
+        'горячие точки генов AKT1, AKT2, AKT3, ALK (киназный домен), ARAF, BRAF (мутации классов I,II,III),',
+        'ERBB2, ERBB3, ERBB4, ESR1, G6PD, H3F3A, HIST1H3B, HIST1H3C, HRAS, IDH1, IDH2, KIT (экзоны 8-11,13,14,17,18),',
+        'KRAS (в т.ч. кодоны 12,13,59,61,117,141), MET (киназный домен), NRAS, PDGFRA (экзоны 5,12,14,18), PIK3CA (экзоны 2,3,5,6,8,10,19,21),',
+        'RAC1, RAF1, RIT1, ROS1 (киназный домен), UGT1A1.',
+        f"Исследованный материал: блок № {line[params['numffpe']]}",
+        'Диагностические характеристики запуска:',
+        f"Количество прочтений на образец - {line[params['reads']]}",
+        f"Среднее значение покрытия образца - {line[params['cover']]}",
+        f"Равномерность покрытия - {line[params['uniformity']]}%"
+    ]
+    if line[params['result']] == 'wt':
+        conclusion.append(
+            "При исследовании ДНК, выделенной из фиксированной формалином и залитой в парафин ткани, клинически значимых мутаций не выявлено.")
+    elif line[params['result']] == 'mut':
+        mut_description = [
+            "При исследовании ДНК, выделенной из фиксированной формалином и залитой в парафин ткани,"]
+        if line[params['exon']] == '':
+            mut_description.append(
+                f"в гене {line[params['gene']]}({line[params['transcript']]}) выявлена мутация {line[params['coding']]}")
+            mut_description.append(
+                f"(hg38 {line[params['chrom']]}:{line[params['pos']]}-{line[params['ref']]}-{line[params['alt']]}, {line[params['protein']]}, {line[params['rs']]}),")
+            mut_description.append(
+                f"аллельный баланс - {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
+        else:
+            mut_description.append(
+                f"в {line[params['exon']]} экзоне гена {line[params['gene']]}({line[params['transcript']]}) выявлена мутация {line[params['coding']]}")
+            mut_description.append(
+                f"(hg38 {line[params['chrom']]}:{line[params['pos']]}-{line[params['ref']]}-{line[params['alt']]}, {line[params['protein']]}, {line[params['rs']]}),")
+            mut_description.append(
+                f"аллельный баланс - {(float(line[params['ab']]) * 100): .2g}%, приводящая к {sequence_ontology[line[params['effect']]]}.")
+        mut_description = ' '.join(mut_description)
+        conclusion.append(mut_description)
+        if line[params['freq']] == '':
+            conclusion.append("Вариант отсутствует в базе данных популяционных частот gnomAD_v4.1.0.")
+        else:
+            conclusion.append(
+                f"Частота минорного аллеля (gnomAD_v4.1.0.) - {(float(line[params['freq']]) * 100): .4g}%.")
+        conclusion.append(f"Глубина прочтения варианта {line[params['depth']]}x.")
+        if line[params['cosmic']] != '':
+            conclusion.append(
+                f"Мутация {line[params['coding']]} в гене {line[params['gene']]} зарегистрирована в международной базе данных COSMIC ({line[params['cosmic']]}).")
+        conclusion.append(f"Класс по AMP - {line[params['amp']]}.")
+    else:
+        raise ValueError(f"Wrong result {line[params['result']]}")
     with open(output_file, mode='w') as outfile:
         outfile.write('\n'.join(conclusion))

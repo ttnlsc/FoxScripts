@@ -25,37 +25,16 @@ def annotate_variants(input_dir, output_dir):
 
     # List of annotators to be used
     annotators = [
-        # "brca1_func_assay",
-        "cancer_genome_interpreter",
-        "cancer_hotspots",
-        # "civic",
-        # "civic_gene",
-        "clingen",
-        "clingen_allele_registry",
-        "clinpred",
+        "bayesdel",
         "clinvar",
         "clinvar_acmg",
         "cosmic",
         "dbsnp",
-        "fathmm",
-        "gnomad3",
-        "metalr",
-        "metasvm",
-        "mutation_assessor",
-        "mutationtaster",
-        "mutpred1",
-        "mutpred_indel",
-        "oncokb",
-        "omim",
-        "pharmgkb",
+        "gnomad4",
         "phylop",
-        "polyphen2",
-        "provean",
         "pseudogene",
-        "sift",
-        "spliceai",
-        "uniprot",
-        "uniprot_domain"
+        "revel",
+        "spliceai"
     ]
 
     # Annotate each file

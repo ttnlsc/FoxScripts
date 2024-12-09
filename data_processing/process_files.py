@@ -136,9 +136,7 @@ def filter_cravat_xls(folder: str, total_reads: int = 50, vaf: float = 0.2):
                                'Protein Change', 'All Mappings', 'Sample Count', 'Samples', 'ID', 'Clinical Significance',
                                'Disease Names', 'Review Status',
                                'ClinVar ID', 'Phred', 'VCF filter', 'Zygosity', 'Alternate reads', 'Total reads',
-                               'Variant AF', 'rsID', 'Global AF',
-                               'African AF', 'Ashkenazi Jewish AF', 'East Asian AF', 'Finnish AF', 'Latino AF',
-                               'Non-Fin Eur AF', 'Other AF', 'South Asian AF']
+                               'Variant AF', 'rsID', 'Global AF']
             df = df[columns_to_keep]
             filtered_df = df.query(
                 "`Total reads` > @total_reads and `Variant AF` >= @vaf and (`Global AF`.isna() or `Global AF` < 0.01)"
@@ -162,9 +160,15 @@ def filter_varscan_xls(folder: str, total_reads: int = 50):
     for file in os.listdir(path_to_xlsx):
         if file.endswith(".vcf.xlsx"):
             name = file.split('.vcf')[0]
+            columns_to_keep = ['UID', 'Chrom', 'Position', 'Ref Base', 'Alt Base', 'Coding', 'Gene', 'Transcript',
+                               'Sequence Ontology', 'Exon Number', 'cDNA change',
+                               'Protein Change', 'All Mappings', 'Sample Count', 'Samples', 'ID',
+                               'Clinical Significance', 'Disease Names', 'Review Status',
+                               'ClinVar ID', 'Total reads', 'rsID', 'Global AF']
 
             # Load the Excel file and CSV file
             df_1 = pd.read_excel(os.path.join(path_to_xlsx, file), sheet_name="Variant", header=1)
+            df1 = df1[columns_to_keep]
             df_2 = pd.read_csv(os.path.join(path_to_txt, f'{name}.txt'), sep='\t', header=0)
             if 'indel' in name and 'Position' in df_2.columns:
                 df_2['Position'] = df_2['Position'] + 1
